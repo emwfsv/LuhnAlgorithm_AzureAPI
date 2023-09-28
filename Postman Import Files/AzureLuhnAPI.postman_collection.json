@@ -1,0 +1,47 @@
+{
+	"info": {
+		"_postman_id": "11414516-123e-46fd-b8bb-47eea839434c",
+		"name": "AzureLuhnAPI",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "18997024"
+	},
+	"item": [
+		{
+			"name": "CheckLuhnCalculation",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"value\" : \"810711-0598\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:7106/api/v1/Luhn/CheckLuhnCalulation?value=810711-0597",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "7106",
+					"path": [
+						"api",
+						"v1",
+						"Luhn",
+						"CheckLuhnCalulation"
+					],
+					"query": [
+						{
+							"key": "value",
+							"value": "810711-0597"
+						}
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
