@@ -25,7 +25,7 @@ namespace LuhnAlgorithm_AzureAPI.Classes.v1.Luhn
 
         [FunctionName("CheckLuhnCalulation")]
         [OpenApiOperation(operationId: "Run", tags: new[] { "value" })]
-        [OpenApiParameter(name: "value", In = ParameterLocation.Query, Required = true, Type = typeof(ApiRequests_CheckLuhnCalculation), Description = "Value to calculate Luhn on. Only accepts 0-9, '-' will be removed")]
+        [OpenApiParameter(name: "value", In = ParameterLocation.Query, Required = true, Type = typeof(ApiRequests_CheckLuhnCalculation), Description = "Value to calculate Luhn on. Only accepts 0-9, '-' in swedish personal numbers will be removed")]
         [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: "json", bodyType: typeof(ApiResponses_CheckLuhnCalculation), Description = "Returns the sent value, result. If failed a corrected Luhn is returned")]
         public async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "v1/Luhn/CheckLuhnCalulation")] HttpRequest req, ExecutionContext executionContext)
         {
@@ -52,7 +52,7 @@ namespace LuhnAlgorithm_AzureAPI.Classes.v1.Luhn
             {
                 return new BadRequestObjectResult(new ApiResponses_BadRequest() { message = "Parameter / Body data 'value' is missing" });
             }
-            else if(value.Replace("-","").All(char.IsDigit))
+            else if(!value.Replace("-","").All(char.IsDigit))
             {
                 return new BadRequestObjectResult(new ApiResponses_BadRequest() { message = "Parameter / Body data 'value' contains none valid data. Only '0' to '9' are valid characters." });
             }
@@ -62,7 +62,7 @@ namespace LuhnAlgorithm_AzureAPI.Classes.v1.Luhn
                 var response = new ApiResponses_CheckLuhnCalculation() { value = value };
 
                 //Check Luhn calculation
-                if(await CheckLuhnCalculation(value))
+                if(await CheckLuhnCalculation(value.Replace("-", "")))
                 {
                     //Correct, set valid values.
                     response.result = true;
@@ -71,7 +71,7 @@ namespace LuhnAlgorithm_AzureAPI.Classes.v1.Luhn
                 {
                     //Faulty, Calculate correct data
                     response.result = false;
-                    response.correctedLuhn = await CalculateCorrectLuhnNumber(value);
+                    response.correctedLuhn = await CalculateCorrectLuhnNumber(value.Replace("-", ""));
                 }
 
                 //Calculation went wrong but both are valid results
@@ -81,12 +81,41 @@ namespace LuhnAlgorithm_AzureAPI.Classes.v1.Luhn
 
         public async Task<bool> CheckLuhnCalculation(string inputValue)
         {
-             return true;
+            var luhn = new LuhnAlgorithms.LuhnAlgorithm();
+
+            return luhn.CheckOcr(inputValue);
         }
 
         public async Task<int> CalculateCorrectLuhnNumber(string inputValue)
         {
-            return 1;
+            //Constructor
+            var internalValue = 0;
+            var startMultFactor = 1;
+            var valueArray = inputValue.ToCharArray().Reverse().Skip(1);
+
+            foreach(var v in valueArray)
+            {
+                internalValue += SplitNumberCalulation((v - '0') * startMultFactor);
+                startMultFactor = startMultFactor == 1 ? 2 : 1;
+            }
+
+            return internalValue % 10;
+
+        }
+
+        private int SplitNumberCalulation(int value)
+        {
+            if(value > 9)
+            {
+                var returnSum = 0;
+                foreach(var d in value.ToString().Select(x => int.Parse(x.ToString())))
+                {
+                    returnSum += d;
+                }
+                return returnSum;
+
+            }
+            else { return value; }
         }
     }
 }
